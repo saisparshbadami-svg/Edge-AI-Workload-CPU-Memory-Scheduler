@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verification Suite | Edge-AI OS Simulator</title>
+  <style>
+    :root {
+      --bg: #060b13;
+      --card-bg: rgba(13, 23, 38, 0.75);
+      --card-border: rgba(0, 245, 212, 0.2);
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --neon-teal: #00f5d4;
+      --neon-amber: #ffb703;
+      --neon-magenta: #f72585;
+      --neon-green: #10b981;
+      --neon-red: #ef4444;
+      --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 2rem 1.5rem;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    .badge-edge {
+      background: rgba(0, 245, 212, 0.12);
+      color: var(--neon-teal);
+      border: 1px solid rgba(0, 245, 212, 0.3);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .sub {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+
+    .student-tag {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      background: rgba(255, 183, 3, 0.1);
+      color: var(--neon-amber);
+      border: 1px solid rgba(255, 183, 3, 0.3);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+    }
+
+    .summary-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+    }
+
+    .metric-group {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+
+    .btn {
+      background: rgba(0, 245, 212, 0.15);
+      border: 1px solid var(--neon-teal);
+      color: var(--neon-teal);
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: var(--neon-teal);
+      color: #060b13;
+      box-shadow: 0 0 16px rgba(0, 245, 212, 0.4);
+    }
+
+    .test-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .test-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-left: 4px solid var(--neon-green);
+      border-radius: 8px;
+      padding: 1.25rem;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .test-card.fail {
+      border-left-color: var(--neon-red);
+    }
+
+    .test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      gap: 1rem;
+    }
+
+    .test-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .status-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .status-badge.pass {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--neon-green);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .status-badge.fail {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--neon-red);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .test-desc {
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+
+    .test-meta {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .meta-label {
+      color: var(--text-dim);
+      min-width: 80px;
+    }
+
+    .meta-val {
+      color: #38bdf8;
+    }
+
+    .footer-bar {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>
+          Engine Verification Suite
+          <span class="badge-edge">Deterministic</span>
+        </h1>
+        <p class="sub">Rigorous correctness & theorem verification for Edge-AI CPU & Memory Scheduler</p>
+      </div>
+      <div class="student-tag">Sai Sparsh B | 25BTRPW078</div>
+    </header>
+
+    <div class="summary-card">
+      <div class="metric-group">
+        <div class="metric-item">
+          <span class="metric-label">Status</span>
+          <span class="metric-val" id="summaryStatus" style="color: var(--neon-green);">PASS</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Tests Passed</span>
+          <span class="metric-val" id="summaryCounts">5 / 5</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Execution Time</span>
+          <span class="metric-val" id="summaryTime">~1.2 ms</span>
+        </div>
+      </div>
+      <div>
+        <a href="index.html" class="btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Back to Interactive App
+        </a>
+      </div>
+    </div>
+
+    <div class="test-list" id="testList">
+      <!-- Injected by JavaScript -->
+    </div>
+
+    <div class="footer-bar">
+      <span>Edge-AI Workload CPU and Memory Scheduler | Operating Systems Mini Project</span>
+      <span style="font-family: var(--font-mono);">Sai Sparsh B | 25BTRPW078</span>
+    </div>
+  </div>
+
+  <script src="js/engine.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const startTime = performance.now();
+      const results = OSSim.Engine.runVerifications();
+      const duration = (performance.now() - startTime).toFixed(2);
+
+      const testListEl = document.getElementById('testList');
+      const passedCount = results.filter(r => r.passed).length;
+      const allPassed = passedCount === results.length;
+
+      document.getElementById('summaryStatus').textContent = allPassed ? 'ALL PASSED' : 'FAILURES';
+      document.getElementById('summaryStatus').style.color = allPassed ? 'var(--neon-green)' : 'var(--neon-red)';
+      document.getElementById('summaryCounts').textContent = `${passedCount} / ${results.length}`;
+      document.getElementById('summaryTime').textContent = `${duration} ms`;
+
+      testListEl.innerHTML = results.map(r => `
+        <div class="test-card ${r.passed ? '' : 'fail'}">
+          <div class="test-header">
+            <div class="test-title">${escapeHtml(r.name)}</div>
+            <span class="status-badge ${r.passed ? 'pass' : 'fail'}">
+              ${r.passed ? 'PASS' : 'FAIL'}
+            </span>
+          </div>
+          <div class="test-desc">${escapeHtml(r.desc)}</div>
+          <div class="test-meta">
+            <div class="meta-row">
+              <span class="meta-label">Expected:</span>
+              <span class="meta-val">${escapeHtml(r.details.expected)}</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Actual:</span>
+              <span class="meta-val" style="color: ${r.passed ? 'var(--neon-teal)' : 'var(--neon-red)'};">
+                ${escapeHtml(r.details.actual)}
+              </span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
+

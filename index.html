@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Edge-AI Workload CPU and Memory Scheduler - University Operating Systems Mini Project Companion. Simulate inference jobs, compare scheduling, and frame-allocation strategies.">
+  <title>Edge-AI Workload CPU & Memory Scheduler</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <!-- Circuit Background Canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Glowing Cursor Trail -->
+  <div class="cursor-dot"></div>
+  <div class="cursor-glow"></div>
+
+  <!-- Sticky Glass Navbar (Stays on ONE line) -->
+  <nav class="site-nav" aria-label="Main Navigation">
+    <div class="nav-container">
+      <a href="#hero" class="nav-brand">
+        <svg class="chip-logo" viewBox="0 0 24 24">
+          <rect x="4" y="4" width="16" height="16" rx="2" stroke-width="2"/>
+          <rect x="9" y="9" width="6" height="6" stroke-width="1.5"/>
+          <line x1="9" y1="1" x2="9" y2="4" stroke-width="2"/>
+          <line x1="15" y1="1" x2="15" y2="4" stroke-width="2"/>
+          <line x1="9" y1="20" x2="9" y2="23" stroke-width="2"/>
+          <line x1="15" y1="20" x2="15" y2="23" stroke-width="2"/>
+          <line x1="1" y1="9" x2="4" y2="9" stroke-width="2"/>
+          <line x1="1" y1="15" x2="4" y2="15" stroke-width="2"/>
+          <line x1="20" y1="9" x2="23" y2="9" stroke-width="2"/>
+          <line x1="20" y1="15" x2="23" y2="15" stroke-width="2"/>
+        </svg>
+        <span>Edge-AI OS Lab</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#concepts">Concepts</a></li>
+        <li><a href="#sim-cpu">CPU Lab</a></li>
+        <li><a href="#sim-mem">Memory Lab</a></li>
+        <li><a href="#dashboard">Comparison</a></li>
+        <li><a href="#telemetry">Linux /proc</a></li>
+        <li><a href="#engineering">Architecture</a></li>
+        <li><a href="#outcomes">Outcomes</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button class="btn-secondary btn-sm" data-open-verification title="View Engine Verification Suite">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Verify Engine
+        </button>
+        <span class="student-badge-nav">Sai Sparsh B | 25BTRPW078</span>
+        <button class="mobile-toggle" aria-label="Toggle Navigation Menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
+    <div class="scroll-progress-bar"></div>
+  </nav>
+
+  <main class="main-wrapper">
+    <!-- SECTION 1: HERO -->
+    <section id="hero" class="hero-section">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="hero-badge-row">
+            <span class="section-tag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              Operating Systems Mini Project
+            </span>
+            <span class="meta-pill">Autonomous Edge AI</span>
+          </div>
+
+          <h1 class="hero-title">
+            <span id="heroHeadlineText"></span><span class="typing-cursor"></span>
+          </h1>
+
+          <p class="hero-desc">
+            Simulate inference jobs with different deadlines and memory footprints. Compare scheduling and frame-allocation strategies while measuring response time and memory pressure.
+          </p>
+
+          <div class="hero-meta-badges">
+            <span class="meta-pill">Topics: Scheduling &bull; Virtual Memory &bull; Linux /proc</span>
+            <span class="meta-pill">Deliverable: Python/C Simulator</span>
+            <span class="meta-pill" style="border-color: rgba(255, 183, 3, 0.3); color: var(--neon-amber);">Student: Sai Sparsh B | 25BTRPW078</span>
+          </div>
+
+          <div class="hero-cta-group">
+            <a href="#sim-cpu" class="btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Try the Simulator
+            </a>
+            <a href="#concepts" class="btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              Learn the Concepts
+            </a>
+            <a href="tests.html" class="btn-ghost" target="_blank">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              Tests Suite (tests.html)
+            </a>
+          </div>
+        </div>
+
+        <!-- Live Hero Edge-Chip Visualizer -->
+        <div class="hero-visual-card">
+          <div class="hero-chip-header">
+            <span>EDGE_CORE_SOC :: ACTIVE_RUNTIME</span>
+            <div class="chip-status-pulse">
+              <span class="status-dot-pulse"></span>
+              <span>SIM ACTIVE</span>
+            </div>
+          </div>
+
+          <div class="hero-chip-arena">
+            <!-- Ready Queue Lane -->
+            <div>
+              <div class="hero-queue-lane">
+                <span class="hero-lane-label">READY Q:</span>
+                <div id="heroQueuePackets" style="display: flex; gap: 6px;"></div>
+              </div>
+            </div>
+
+            <!-- Central CPU Core -->
+            <div class="hero-cpu-core">
+              <span class="cpu-core-title">CPU CORE 0</span>
+              <span class="cpu-active-job" id="heroActiveJob">YOLOv8:P2</span>
+              <div class="cpu-quantum-track">
+                <div class="cpu-quantum-progress"></div>
+              </div>
+            </div>
+
+            <!-- Resident Physical Frames Grid -->
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-dim); margin-bottom: 4px;">
+                <span>RESIDENT PHYSICAL FRAMES</span>
+                <span>DEMAND PAGING ACTIVE</span>
+              </div>
+              <div class="hero-frames-grid" id="heroFramesGrid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: PROJECT OVERVIEW -->
+    <section id="overview">
+      <div class="section-header">
+        <span class="section-tag">Project Overview</span>
+        <h2 class="section-title">Edge Device Constraints &amp; OS Orchestration</h2>
+        <p class="section-subtitle">
+          How modern embedded operating systems balance real-time neural network deadlines against strictly constrained RAM.
+        </p>
+      </div>
+
+      <div class="overview-grid">
+        <div class="overview-card">
+          <div class="overview-text">
+            <p>
+              Autonomous edge systems—such as <strong>smart security cameras</strong>, <strong>embedded voice assistants</strong>, and <strong>autonomous delivery drones</strong>—execute multiple concurrent AI inference pipelines on compact single-core System-on-Chips (SoCs) equipped with limited physical RAM (often 512MB to 2GB).
+            </p>
+            <p>
+              Each deep learning workload imposes strict deadlines: a collision-avoidance model missing its deadline may result in hardware destruction, whereas a speech recognizer can tolerate slight delays. Simultaneously, neural models require multiple memory pages (virtual memory working sets) to hold intermediate activations and layer weights.
+            </p>
+          </div>
+
+          <div class="highlight-box">
+            <strong>The Core OS Challenge:</strong> Who runs next on the CPU? How many physical frames should each job receive? When memory is full, which resident page must be evicted to prevent CPU stalls?
+          </div>
+        </div>
+
+        <!-- Animated Flow Diagram -->
+        <div class="flow-diagram-container">
+          <svg class="flow-svg" viewBox="0 0 600 380">
+            <defs>
+              <linearGradient id="flowGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#00f5d4" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#00b4d8" stop-opacity="0.8"/>
+              </linearGradient>
+              <linearGradient id="flowGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#ffb703" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#f72585" stop-opacity="0.8"/>
+              </linearGradient>
+              <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur"/>
+                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+              </filter>
+            </defs>
+
+            <!-- Flow Connecting Pipes -->
+            <path d="M 90 90 L 170 90" stroke="rgba(0, 245, 212, 0.4)" stroke-width="2" stroke-dasharray="4,4"/>
+            <path d="M 280 90 L 340 90" stroke="rgba(0, 245, 212, 0.4)" stroke-width="2" stroke-dasharray="4,4"/>
+            <path d="M 450 90 L 510 90" stroke="rgba(0, 245, 212, 0.4)" stroke-width="2" stroke-dasharray="4,4"/>
+            <path d="M 400 130 L 400 210" stroke="rgba(255, 183, 3, 0.4)" stroke-width="2" stroke-dasharray="4,4"/>
+            <path d="M 340 250 L 260 250" stroke="rgba(255, 183, 3, 0.4)" stroke-width="2" stroke-dasharray="4,4"/>
+            <path d="M 150 250 L 80 250" stroke="rgba(247, 37, 133, 0.4)" stroke-width="2" stroke-dasharray="4,4"/>
+            <path d="M 400 130 L 480 210" stroke="rgba(0, 180, 216, 0.4)" stroke-width="2" stroke-dasharray="4,4"/>
+
+            <!-- Node 1: Inference Jobs Arrival -->
+            <g class="flow-node" transform="translate(10, 60)">
+              <rect width="80" height="60" rx="8" fill="#0b1b2d" stroke="var(--border-glass)" stroke-width="1.5"/>
+              <text x="40" y="28" fill="#fff" font-size="11" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">AI JOBS</text>
+              <text x="40" y="44" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="var(--font-sans)">Arrival &amp; D_i</text>
+            </g>
+
+            <!-- Node 2: Ready Queue -->
+            <g class="flow-node" transform="translate(170, 60)">
+              <rect width="110" height="60" rx="8" fill="#0b1b2d" stroke="#00f5d4" stroke-width="1.5" filter="url(#glowFilter)"/>
+              <text x="55" y="28" fill="#00f5d4" font-size="11" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">READY QUEUE</text>
+              <text x="55" y="44" fill="#cbd5e1" font-size="9" text-anchor="middle" font-family="var(--font-sans)">FCFS/EDF/Prio</text>
+            </g>
+
+            <!-- Node 3: CPU Scheduler -->
+            <g class="flow-node" transform="translate(340, 60)">
+              <rect width="110" height="60" rx="8" fill="#0b1b2d" stroke="#00b4d8" stroke-width="1.5"/>
+              <text x="55" y="28" fill="#00b4d8" font-size="11" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">CPU SCHEDULER</text>
+              <text x="55" y="44" fill="#cbd5e1" font-size="9" text-anchor="middle" font-family="var(--font-sans)">Dispatch Policy</text>
+            </g>
+
+            <!-- Node 4: CPU Core -->
+            <g class="flow-node" transform="translate(510, 60)">
+              <rect width="80" height="60" rx="8" fill="#0e2338" stroke="#00f5d4" stroke-width="2"/>
+              <text x="40" y="28" fill="#fff" font-size="11" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">CPU CORE</text>
+              <text x="40" y="44" fill="#00f5d4" font-size="9" text-anchor="middle" font-family="var(--font-sans)">Burst Exec</text>
+            </g>
+
+            <!-- Node 5: Memory Manager -->
+            <g class="flow-node" transform="translate(340, 220)">
+              <rect width="120" height="60" rx="8" fill="#0b1b2d" stroke="#ffb703" stroke-width="1.5"/>
+              <text x="60" y="28" fill="#ffb703" font-size="11" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">MEMORY MGR</text>
+              <text x="60" y="44" fill="#cbd5e1" font-size="9" text-anchor="middle" font-family="var(--font-sans)">Demand Paging</text>
+            </g>
+
+            <!-- Node 6: Physical Frames -->
+            <g class="flow-node" transform="translate(150, 220)">
+              <rect width="110" height="60" rx="8" fill="#0b1b2d" stroke="#ffb703" stroke-width="1.5"/>
+              <text x="55" y="28" fill="#ffb703" font-size="11" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">RAM FRAMES</text>
+              <text x="55" y="44" fill="#cbd5e1" font-size="9" text-anchor="middle" font-family="var(--font-sans)">Resident Pages</text>
+            </g>
+
+            <!-- Node 7: Disk Swap -->
+            <g class="flow-node" transform="translate(10, 220)">
+              <rect width="70" height="60" rx="8" fill="#0b1b2d" stroke="#f72585" stroke-width="1.5"/>
+              <text x="35" y="28" fill="#f72585" font-size="11" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">SWAP/FLASH</text>
+              <text x="35" y="44" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="var(--font-sans)">Fault Stall</text>
+            </g>
+
+            <!-- Node 8: Linux Telemetry -->
+            <g class="flow-node" transform="translate(460, 220)">
+              <rect width="130" height="60" rx="8" fill="#061220" stroke="#38bdf8" stroke-width="1.5"/>
+              <text x="65" y="28" fill="#38bdf8" font-size="11" font-weight="700" text-anchor="middle" font-family="var(--font-mono)">LINUX /proc</text>
+              <text x="65" y="44" fill="#cbd5e1" font-size="9" text-anchor="middle" font-family="var(--font-sans)">stat &bull; meminfo</text>
+            </g>
+
+            <!-- Flow annotations -->
+            <text x="300" y="325" fill="#64748b" font-size="10" font-family="var(--font-mono)" text-anchor="middle">
+              Interactive Hardware &amp; Kernel Orchestration Loop
+            </text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: CORE CONCEPTS -->
+    <section id="concepts">
+      <div class="section-header">
+        <span class="section-tag">Theoretical Foundations</span>
+        <h2 class="section-title">Core Operating System Concepts</h2>
+        <p class="section-subtitle">
+          Click any card to expand deep architectural details, mathematical principles, and algorithm comparisons.
+        </p>
+      </div>
+
+      <div class="concepts-grid">
+        <!-- Concept 1: CPU Scheduling -->
+        <div class="glass-card concept-card">
+          <div class="concept-card-header">
+            <div class="concept-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+            </div>
+            <div>
+              <h3 class="concept-title">CPU Scheduling</h3>
+              <span class="meta-pill">FCFS &bull; SJF &bull; RR &bull; Priority &bull; EDF</span>
+            </div>
+          </div>
+          <p class="concept-summary">
+            Schedulers determine execution sequence. FCFS incurs convoy effects; SJF minimizes average waiting time; Round Robin provides fair interactive response; Priority guards critical tasks; EDF guarantees deadline feasibility under bounded load.
+          </p>
+          <div class="concept-expandable">
+            <p><strong>When Each One Wins:</strong></p>
+            <ul style="margin: 0.5rem 0 0.5rem 1.25rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;">
+              <li><strong>FCFS:</strong> Batch pipelines where context switches must be strictly minimized.</li>
+              <li><strong>SJF:</strong> Scenarios prioritizing minimum average waiting latency when burst durations are known.</li>
+              <li><strong>Round Robin:</strong> Multi-tenant edge services requiring rapid initial response times.</li>
+              <li><strong>Priority (with Aging):</strong> Critical tasks like obstacle detection; aging prevents lower priority starvation.</li>
+              <li><strong>EDF:</strong> Hard real-time inference workloads where total utilization &le; 1.0.</li>
+            </ul>
+          </div>
+          <div class="concept-expand-toggle">
+            <span class="toggle-text">Expand Concept Details</span>
+            <span class="toggle-icon">&#9662;</span>
+          </div>
+        </div>
+
+        <!-- Concept 2: Deadlines & Metrics -->
+        <div class="glass-card concept-card">
+          <div class="concept-card-header">
+            <div class="concept-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+            </div>
+            <div>
+              <h3 class="concept-title">Deadlines &amp; Metrics</h3>
+              <span class="meta-pill">Response &bull; Waiting &bull; Turnaround &bull; Misses</span>
+            </div>
+          </div>
+          <p class="concept-summary">
+            Real-time operating systems evaluate dispatch performance using deterministic discrete time metrics: response time, turnaround time, waiting latency, and absolute deadline violations.
+          </p>
+          <div class="concept-expandable">
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;">
+              <strong>Formal Metric Formulations:</strong><br>
+              &bull; <code>Response Time = t_first_run - t_arrival</code><br>
+              &bull; <code>Turnaround Time = t_finish - t_arrival</code><br>
+              &bull; <code>Waiting Time = Turnaround - Burst</code><br>
+              &bull; <code>Deadline Miss = t_finish &gt; t_deadline</code><br>
+              &bull; <code>CPU Utilisation = (Busy Ticks + Fault Stall Ticks) / Elapsed Ticks</code>
+            </p>
+          </div>
+          <div class="concept-expand-toggle">
+            <span class="toggle-text">Expand Concept Details</span>
+            <span class="toggle-icon">&#9662;</span>
+          </div>
+        </div>
+
+        <!-- Concept 3: Frame Allocation -->
+        <div class="glass-card concept-card">
+          <div class="concept-card-header">
+            <div class="concept-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+            </div>
+            <div>
+              <h3 class="concept-title">Frame Allocation</h3>
+              <span class="meta-pill">Equal &bull; Proportional &bull; Priority</span>
+            </div>
+          </div>
+          <p class="concept-summary">
+            Physical RAM must be partitioned across concurrent active inference tasks. Equal divides slots uniformly; Proportional allocates based on virtual footprint; Priority rewards latency-sensitive pipelines.
+          </p>
+          <div class="concept-expandable">
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;">
+              In edge SoCs, Equal allocation unfairly starves heavy feature extractors while giving surplus memory to tiny telemetry tasks. Proportional allocation sizes partitions according to virtual working sets, mitigating unnecessary page thrashing.
+            </p>
+          </div>
+          <div class="concept-expand-toggle">
+            <span class="toggle-text">Expand Concept Details</span>
+            <span class="toggle-icon">&#9662;</span>
+          </div>
+        </div>
+
+        <!-- Concept 4: Virtual Memory & Fault Stall -->
+        <div class="glass-card concept-card">
+          <div class="concept-card-header">
+            <div class="concept-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+            </div>
+            <div>
+              <h3 class="concept-title">Virtual Memory &amp; Fault Stall</h3>
+              <span class="meta-pill">Demand Paging &bull; Stall Penalty</span>
+            </div>
+          </div>
+          <p class="concept-summary">
+            When an execution tick accesses a virtual page not resident in physical memory, the hardware triggers a Page Fault interrupt. The CPU incurs a multi-tick fault stall while the kernel fetches the page from swap or flash.
+          </p>
+          <div class="concept-expandable">
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;">
+              Crucially, in embedded operating systems, page-fault stalls count directly against CPU time and delay deadline completion. A job with high burst efficiency can still miss its deadline if it suffers recurring memory fault stalls.
+            </p>
+          </div>
+          <div class="concept-expand-toggle">
+            <span class="toggle-text">Expand Concept Details</span>
+            <span class="toggle-icon">&#9662;</span>
+          </div>
+        </div>
+
+        <!-- Concept 5: Page Replacement Policies -->
+        <div class="glass-card concept-card">
+          <div class="concept-card-header">
+            <div class="concept-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </div>
+            <div>
+              <h3 class="concept-title">Page Replacement</h3>
+              <span class="meta-pill">FIFO &bull; LRU &bull; Optimal (Belady's MIN)</span>
+            </div>
+          </div>
+          <p class="concept-summary">
+            When all allocated frames are occupied, the kernel selects a victim to evict. FIFO evicts earliest arrived; LRU evicts least recently accessed; Optimal evicts the page with furthest future reference (theoretical lower bound).
+          </p>
+          <div class="concept-expandable">
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;">
+              Optimal replacement requires future knowledge of reference strings, serving as the benchmark standard. LRU approximates optimal performance via temporal locality.
+            </p>
+          </div>
+          <div class="concept-expand-toggle">
+            <span class="toggle-text">Expand Concept Details</span>
+            <span class="toggle-icon">&#9662;</span>
+          </div>
+        </div>
+
+        <!-- Concept 6: Memory Pressure & Thrashing -->
+        <div class="glass-card concept-card">
+          <div class="concept-card-header">
+            <div class="concept-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            </div>
+            <div>
+              <h3 class="concept-title">Pressure &amp; Thrashing</h3>
+              <span class="meta-pill">Working Sets &bull; Thrashing Point</span>
+            </div>
+          </div>
+          <p class="concept-summary">
+            Thrashing happens when the combined working sets of active processes do not fit in available memory, not simply when total virtual footprint exceeds physical frame count.
+          </p>
+          <div class="concept-expandable">
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;">
+              When combined working sets exceed physical RAM, processes spend more time swapping pages than executing instructions. CPU utilization plummets, latency escalates, and edge devices fail their real-time safety guarantees.
+            </p>
+          </div>
+          <div class="concept-expand-toggle">
+            <span class="toggle-text">Expand Concept Details</span>
+            <span class="toggle-icon">&#9662;</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Critical Callouts Required by Syllabus -->
+      <div class="callout-box">
+        <div class="callout-card">
+          <div class="callout-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 22 22 22 12 2"></polygon><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="9" x2="12.01" y2="9"></line></svg>
+            <span>Belady's Anomaly for FIFO Replacement</span>
+          </div>
+          <div class="callout-content">
+            Under FIFO, allocating more frames can paradoxically increase page faults! The reference sequence <code>1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5</code> yields <strong>9 faults with 3 frames</strong> and increases to <strong>10 faults with 4 frames</strong>. Verified in our engine.
+          </div>
+        </div>
+
+        <div class="callout-card magenta">
+          <div class="callout-header" style="color: var(--neon-magenta);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span>EDF Feasibility Theorem &amp; Overload Behavior</span>
+          </div>
+          <div class="callout-content">
+            Earliest Deadline First (EDF) is mathematically optimal only when total utilization &le; 1.0. Under transient edge overload (&sum; C_i / T_i &gt; 1.0) or unexpected page-fault stalls, EDF experiences domino deadline misses.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: INTERACTIVE SIMULATOR 1 - CPU SCHEDULER LAB -->
+    <section id="sim-cpu">
+      <div class="section-header">
+        <span class="section-tag">Simulator 1</span>
+        <h2 class="section-title">CPU Scheduler Lab</h2>
+        <p class="section-subtitle">
+          Configure inference jobs, select dispatching algorithms, and observe discrete tick execution on the animated Gantt runway.
+        </p>
+      </div>
+
+      <div class="glass-card simulator-panel">
+        <!-- Presets Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Workload Presets:</span>
+            <div class="tab-pill-group">
+              <button class="tab-pill active" data-preset="smart-camera">Smart Camera</button>
+              <button class="tab-pill" data-preset="voice-assistant">Voice Assistant</button>
+              <button class="tab-pill" data-preset="tight-memory">Tight Memory</button>
+              <button class="tab-pill" data-preset="rush-hour">Rush Hour</button>
+              <button class="tab-pill" data-preset="quiet-night">Quiet Night</button>
+            </div>
+          </div>
+          <button class="btn-secondary btn-sm" id="btnAddJob">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add Custom Job
+          </button>
+        </div>
+
+        <!-- Algorithm Selector Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Scheduler:</span>
+            <div class="tab-pill-group">
+              <button class="tab-pill" data-scheduler="FCFS">FCFS</button>
+              <button class="tab-pill" data-scheduler="SJF">SJF</button>
+              <button class="tab-pill" data-scheduler="Round Robin">Round Robin</button>
+              <button class="tab-pill" data-scheduler="Priority">Priority</button>
+              <button class="tab-pill active" data-scheduler="EDF">EDF (Preemptive)</button>
+            </div>
+          </div>
+
+          <!-- Dynamic Controls for RR and Priority -->
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div id="quantumControlWrap" style="display: none; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem;">
+              <span style="color: var(--text-muted);">Quantum:</span>
+              <input type="range" id="quantumSlider" min="1" max="8" value="3" class="sim-slider" style="width: 80px;">
+              <span id="quantumVal" style="color: var(--neon-teal); font-weight: 700;">3</span>
+            </div>
+
+            <div id="agingControlWrap" style="display: none; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem;">
+              <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--text-muted);">
+                <input type="checkbox" id="agingCheckbox">
+                <span>Enable Aging</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Playback & Scrubber Controls Bar -->
+        <div class="sim-controls-bar">
+          <div class="sim-btn-group">
+            <button class="btn-primary btn-sm" id="btnPlay" title="Start continuous playback">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Play
+            </button>
+            <button class="btn-ghost btn-sm" id="btnPause" title="Pause playback">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+              Pause
+            </button>
+            <button class="btn-secondary btn-sm" id="btnStep" title="Advance one discrete tick">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+              Step
+            </button>
+            <button class="btn-ghost btn-sm" id="btnReset" title="Reset to tick 0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+              Reset
+            </button>
+          </div>
+
+          <!-- Tick Scrubber -->
+          <div class="scrubber-wrap">
+            <span id="currentTickDisplay" style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--neon-teal); min-width: 65px;">Tick: 0</span>
+            <input type="range" id="tickScrubber" min="0" max="30" value="0" class="sim-slider">
+            <span id="scrubberMaxTick" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim);">Tick 30</span>
+          </div>
+
+          <!-- Speed Options -->
+          <div class="sim-speed-control">
+            <span>Speed:</span>
+            <div class="tab-pill-group" style="padding: 2px;">
+              <button class="tab-pill active" data-speed="1">1x</button>
+              <button class="tab-pill" data-speed="2">2x</button>
+              <button class="tab-pill" data-speed="5">5x</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Metrics Cards -->
+        <div class="metrics-dashboard-row">
+          <div class="metric-stat-box">
+            <span class="stat-label">Avg Response</span>
+            <span class="stat-value" id="metricAvgResp">--</span>
+          </div>
+          <div class="metric-stat-box">
+            <span class="stat-label">Avg Waiting</span>
+            <span class="stat-value" id="metricAvgWait">--</span>
+          </div>
+          <div class="metric-stat-box">
+            <span class="stat-label">Avg Turnaround</span>
+            <span class="stat-value" id="metricAvgTurn">--</span>
+          </div>
+          <div class="metric-stat-box">
+            <span class="stat-label">Deadline Misses</span>
+            <span class="stat-value" id="metricMissRate">--</span>
+          </div>
+          <div class="metric-stat-box">
+            <span class="stat-label">CPU Utilisation</span>
+            <span class="stat-value" id="metricCpuUtil">--</span>
+          </div>
+          <div class="metric-stat-box">
+            <span class="stat-label">Page Faults</span>
+            <span class="stat-value" id="metricFaultCount">--</span>
+          </div>
+        </div>
+
+        <!-- Timeline Gantt Runway -->
+        <div class="timeline-runway-container">
+          <div class="runway-header">
+            <span>DISCRETE EXECUTION RUNWAY (GANTT TIMELINE)</span>
+            <span style="font-size: 0.75rem; color: var(--neon-teal);">Interactive Tick Visualization</span>
+          </div>
+          <div class="runway-scroll-box">
+            <div class="gantt-strip" id="ganttStrip"></div>
+            <div class="runway-ticks-axis" id="runwayTicksAxis"></div>
+          </div>
+        </div>
+
+        <!-- Ready Queue & Active Core Section -->
+        <div class="queue-core-view">
+          <div class="active-core-box">
+            <span class="stat-label">DISPATCHED ON CORE 0</span>
+            <div class="active-job-badge" id="activeCoreJob">IDLE</div>
+            <span style="font-size: 0.78rem; color: var(--text-muted); font-family: var(--font-mono);" id="activeCoreStatus">Awaiting Scheduler</span>
+            <span style="font-size: 0.72rem; color: var(--neon-cyan); font-family: var(--font-mono); margin-top: 0.25rem;" id="activeCoreQuantum">Quantum: Active</span>
+          </div>
+
+          <div class="ready-queue-box">
+            <span class="stat-label">READY QUEUE (DISPATCH ORDER)</span>
+            <div class="queue-items-flow" id="readyQueueChips"></div>
+          </div>
+        </div>
+
+        <!-- Per-Job Results Table -->
+        <div class="job-table-wrap">
+          <table class="job-table">
+            <thead>
+              <tr>
+                <th>Job</th>
+                <th>Model Name</th>
+                <th>Arrival</th>
+                <th>Burst</th>
+                <th>Deadline</th>
+                <th>Priority</th>
+                <th>Pages</th>
+                <th>Resp Time</th>
+                <th>Wait Time</th>
+                <th>Turnaround</th>
+                <th>Faults</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="jobTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: INTERACTIVE SIMULATOR 2 - MEMORY LAB -->
+    <section id="sim-mem">
+      <div class="section-header">
+        <span class="section-tag">Simulator 2</span>
+        <h2 class="section-title">Virtual Memory &amp; Demand Paging Lab</h2>
+        <p class="section-subtitle">
+          Observe physical frame allocations, page hit/fault dynamics, and spring-physics memory pressure with the exact same engine and jobs.
+        </p>
+      </div>
+
+      <div class="glass-card simulator-panel">
+        <!-- Memory Config Controls Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1.25rem;">
+          <!-- Strategy Tabs -->
+          <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Frame Allocation:</span>
+            <div class="tab-pill-group">
+              <button class="tab-pill" data-allocation="Equal">Equal</button>
+              <button class="tab-pill active" data-allocation="Proportional">Proportional</button>
+              <button class="tab-pill" data-allocation="Priority">Priority</button>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Replacement Policy:</span>
+            <div class="tab-pill-group">
+              <button class="tab-pill" data-replacement="FIFO">FIFO</button>
+              <button class="tab-pill active" data-replacement="LRU">LRU</button>
+              <button class="tab-pill" data-replacement="Optimal">Optimal (Belady MIN)</button>
+            </div>
+          </div>
+
+          <!-- Frames Slider -->
+          <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Physical Frames: <strong id="framesVal" style="color: var(--neon-teal);">10</strong></span>
+            <input type="range" id="framesSlider" min="4" max="24" value="10" class="sim-slider" style="width: 140px;">
+          </div>
+
+          <!-- Fault Penalty Slider -->
+          <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Fault Stall Penalty: <strong id="penaltyVal" style="color: var(--neon-magenta);">2 ticks</strong></span>
+            <input type="range" id="penaltySlider" min="0" max="5" value="2" class="sim-slider" style="width: 140px;">
+          </div>
+        </div>
+
+        <!-- Memory Visualizer Grid -->
+        <div class="memory-lab-grid">
+          <div class="frames-visualizer-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="stat-label">PHYSICAL RAM FRAMES (CURRENT RESIDENCY)</span>
+              <div style="display: flex; gap: 0.75rem; font-size: 0.75rem; font-family: var(--font-mono);">
+                <span style="color: var(--neon-green);">&bull; Hit (Green)</span>
+                <span style="color: var(--neon-red);">&bull; Fault (Red)</span>
+                <span style="color: var(--neon-amber);">&bull; Eviction (Amber Pulse)</span>
+              </div>
+            </div>
+
+            <!-- Frames Grid Container -->
+            <div class="physical-frames-container" id="physicalFramesGrid"></div>
+          </div>
+
+          <!-- Memory Pressure Gauge -->
+          <div class="glass-card pressure-gauge-card">
+            <span class="stat-label">MEMORY PRESSURE GAUGE</span>
+            <div class="gauge-canvas-wrap">
+              <canvas id="pressureGaugeCanvas" width="220" height="140"></canvas>
+            </div>
+            <div class="gauge-readout" id="pressureGaugeReadout">1.00x</div>
+            <div class="gauge-status" id="pressureGaugeStatus">Normal Working Sets</div>
+            <span style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.5rem; font-family: var(--font-mono);">
+              Total Demand / Physical Frames
+            </span>
+          </div>
+        </div>
+
+        <!-- Side-by-Side Policy Comparator -->
+        <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-subtle); padding-top: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <span class="stat-label">SIDE-BY-SIDE REPLACEMENT POLICY BENCHMARK</span>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">
+                Test FIFO, LRU, and Optimal simultaneously on identical reference sequences.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <button class="btn-ghost btn-sm" id="btnGenLocality">Locality 80/20</button>
+              <button class="btn-ghost btn-sm" id="btnGenRandom">Uniform Random</button>
+              <button class="btn-secondary btn-sm" id="btnMemStep">Step Ref</button>
+              <button class="btn-ghost btn-sm" id="btnMemReset">Reset</button>
+            </div>
+          </div>
+
+          <!-- Reference String Input & Frames Config -->
+          <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">Reference String:</span>
+              <input type="text" id="refStringInput" value="7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); color: #fff; padding: 0.4rem 0.6rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.8rem;">
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">Test Frames: <strong id="memFramesInputVal" style="color: var(--neon-teal);">3</strong></span>
+              <input type="range" id="memFramesInput" min="2" max="6" value="3" class="sim-slider" style="width: 90px; display: block; margin-top: 4px;">
+            </div>
+          </div>
+
+          <!-- Triple Column Side by Side Cards -->
+          <div class="side-by-side-grid" id="sideBySidePolicies"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: RESULTS & COMPARISON DASHBOARD -->
+    <section id="dashboard">
+      <div class="section-header">
+        <span class="section-tag">Empirical Evaluation</span>
+        <h2 class="section-title">Results &amp; Comparison Dashboard</h2>
+        <p class="section-subtitle">
+          Duel mode head-to-head showdown, the 45-combination ledger, unit-isolated charts, and automated algorithmic synthesis.
+        </p>
+      </div>
+
+      <!-- Duel Mode -->
+      <div class="duel-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <span class="stat-label">DUEL MODE: HEAD-TO-HEAD STRATEGY SHOWDOWN</span>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">
+              Run two disparate OS pipelines synchronously on the current workload.
+            </p>
+          </div>
+          <span class="meta-pill" style="color: var(--neon-cyan);">Synced Playback Active</span>
+        </div>
+
+        <div class="duel-grid">
+          <!-- Strategy A Column -->
+          <div class="duel-column" id="duelColA">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <strong style="color: var(--neon-teal); font-size: 1.05rem;">STRATEGY A</strong>
+              <span class="meta-pill">Candidate 1</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <select id="duelSchedA" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-glass); color: #fff; padding: 0.35rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.78rem;">
+                <option value="EDF" selected>EDF (Preemptive)</option>
+                <option value="Round Robin">Round Robin</option>
+                <option value="Priority">Priority</option>
+                <option value="SJF">SJF</option>
+                <option value="FCFS">FCFS</option>
+              </select>
+              <select id="duelAllocA" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-glass); color: #fff; padding: 0.35rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.78rem;">
+                <option value="Proportional" selected>Proportional</option>
+                <option value="Equal">Equal</option>
+                <option value="Priority">Priority</option>
+              </select>
+              <select id="duelReplA" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-glass); color: #fff; padding: 0.35rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.78rem;">
+                <option value="Optimal" selected>Optimal</option>
+                <option value="LRU">LRU</option>
+                <option value="FIFO">FIFO</option>
+              </select>
+            </div>
+
+            <table class="scoreboard-table">
+              <tr><td>Avg Response Time:</td><td id="duelRespA" style="text-align: right; color: #fff;">--</td></tr>
+              <tr><td>Deadline Misses:</td><td id="duelMissA" style="text-align: right; color: #fff;">--</td></tr>
+              <tr><td>Total Page Faults:</td><td id="duelFaultsA" style="text-align: right; color: #fff;">--</td></tr>
+              <tr><td>CPU Utilisation:</td><td id="duelCpuA" style="text-align: right; color: #fff;">--</td></tr>
+            </table>
+          </div>
+
+          <!-- VS Badge -->
+          <div class="duel-vs-badge">VS</div>
+
+          <!-- Strategy B Column -->
+          <div class="duel-column" id="duelColB">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <strong style="color: var(--neon-amber); font-size: 1.05rem;">STRATEGY B</strong>
+              <span class="meta-pill">Candidate 2</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <select id="duelSchedB" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-glass); color: #fff; padding: 0.35rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.78rem;">
+                <option value="Round Robin" selected>Round Robin</option>
+                <option value="EDF">EDF (Preemptive)</option>
+                <option value="Priority">Priority</option>
+                <option value="SJF">SJF</option>
+                <option value="FCFS">FCFS</option>
+              </select>
+              <select id="duelAllocB" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-glass); color: #fff; padding: 0.35rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.78rem;">
+                <option value="Equal" selected>Equal</option>
+                <option value="Proportional">Proportional</option>
+                <option value="Priority">Priority</option>
+              </select>
+              <select id="duelReplB" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-glass); color: #fff; padding: 0.35rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.78rem;">
+                <option value="FIFO" selected>FIFO</option>
+                <option value="LRU">LRU</option>
+                <option value="Optimal">Optimal</option>
+              </select>
+            </div>
+
+            <table class="scoreboard-table">
+              <tr><td>Avg Response Time:</td><td id="duelRespB" style="text-align: right; color: #fff;">--</td></tr>
+              <tr><td>Deadline Misses:</td><td id="duelMissB" style="text-align: right; color: #fff;">--</td></tr>
+              <tr><td>Total Page Faults:</td><td id="duelFaultsB" style="text-align: right; color: #fff;">--</td></tr>
+              <tr><td>CPU Utilisation:</td><td id="duelCpuB" style="text-align: right; color: #fff;">--</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="duel-result-banner" id="duelResultBanner">
+          Computing duel comparative telemetry...
+        </div>
+      </div>
+
+      <!-- 45 Combination Ledger -->
+      <div class="glass-card">
+        <div class="ledger-filter-bar">
+          <div>
+            <span class="stat-label">45-COMBINATION SYSTEMATIC LEDGER</span>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">
+              Full factorial exploration: 5 Schedulers &times; 3 Allocations &times; 3 Replacements = 45 Configurations.
+            </p>
+          </div>
+          <button class="btn-secondary btn-sm" id="btnExportCsv">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Export CSV
+          </button>
+        </div>
+
+        <!-- Weighted Scoring Sliders -->
+        <div class="weight-sliders-group" style="margin-bottom: 1.25rem; background: rgba(0,0,0,0.25); padding: 0.75rem; border-radius: var(--radius-sm);">
+          <span style="color: #fff; font-weight: 600;">Ranking Weights:</span>
+          <div>
+            <span>Misses (<strong id="lblWeightMisses" style="color: var(--neon-magenta);">40%</strong>):</span>
+            <input type="range" id="weightMisses" min="0" max="100" value="40" class="sim-slider" style="width: 70px;">
+          </div>
+          <div>
+            <span>Response (<strong id="lblWeightResp" style="color: var(--neon-cyan);">25%</strong>):</span>
+            <input type="range" id="weightResp" min="0" max="100" value="25" class="sim-slider" style="width: 70px;">
+          </div>
+          <div>
+            <span>Faults (<strong id="lblWeightFaults" style="color: var(--neon-amber);">25%</strong>):</span>
+            <input type="range" id="weightFaults" min="0" max="100" value="25" class="sim-slider" style="width: 70px;">
+          </div>
+          <div>
+            <span>CPU (<strong id="lblWeightCpu" style="color: var(--neon-teal);">10%</strong>):</span>
+            <input type="range" id="weightCpu" min="0" max="100" value="10" class="sim-slider" style="width: 70px;">
+          </div>
+        </div>
+
+        <!-- Tie Collapsible Box -->
+        <div class="tie-alert-collapsible" id="tieAlertBox" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span id="tieCountText" style="color: var(--neon-amber); font-weight: 700;"></span>
+            <button class="tie-toggle-btn" id="tieToggleBtn">
+              <span>View Tied List</span>
+              <span class="tie-arrow">&#9662;</span>
+            </button>
+          </div>
+          <div id="tieCollapsibleContent" style="display: none; margin-top: 0.75rem; border-top: 1px dashed rgba(255, 183, 3, 0.3); padding-top: 0.5rem;">
+            <ul id="tieCollapsibleList" style="margin-left: 1.25rem; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;"></ul>
+          </div>
+        </div>
+
+        <div class="job-table-wrap" style="max-height: 380px;">
+          <table class="job-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Scheduler</th>
+                <th>Allocation</th>
+                <th>Replacement</th>
+                <th>Misses</th>
+                <th>Avg Resp (ticks)</th>
+                <th>Faults</th>
+                <th>CPU %</th>
+                <th>Score (0-100)</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Custom SVG Charts (Never mixing units on one axis!) -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Scheduler Time Latency Comparison</span>
+            <span class="chart-axis-label">Unit: Discrete Ticks</span>
+          </div>
+          <div class="chart-svg-wrap" id="chartSchedulerTime"></div>
+          <div style="display: flex; gap: 1rem; justify-content: center; font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-muted);">
+            <span style="color: #00b4d8;">&bull; Response Time</span>
+            <span style="color: #ffb703;">&bull; Waiting Time</span>
+            <span style="color: #00f5d4;">&bull; Turnaround Time</span>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Deadline Violation Rate</span>
+            <span class="chart-axis-label">Unit: Percentage (%)</span>
+          </div>
+          <div class="chart-svg-wrap" id="chartMissRate"></div>
+          <div style="display: flex; gap: 1rem; justify-content: center; font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-muted);">
+            <span style="color: var(--neon-green);">&bull; 0% Misses</span>
+            <span style="color: var(--neon-amber);">&bull; &lt; 40%</span>
+            <span style="color: var(--neon-magenta);">&bull; &ge; 40%</span>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Page Fault Count by Replacement Policy</span>
+            <span class="chart-axis-label">Unit: Fault Interrupts</span>
+          </div>
+          <div class="chart-svg-wrap" id="chartFaultsPolicy"></div>
+          <div style="display: flex; gap: 1rem; justify-content: center; font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-muted);">
+            <span style="color: #00f5d4;">&bull; Optimal (Belady MIN)</span>
+            <span style="color: #00b4d8;">&bull; LRU</span>
+            <span style="color: #f59e0b;">&bull; FIFO</span>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Memory Pressure Curve vs. Frame Count</span>
+            <span class="chart-axis-label">X: Frames (4-40) | Y: Page Faults</span>
+          </div>
+          <div class="chart-svg-wrap" id="chartPressureTrend"></div>
+          <div style="display: flex; gap: 1rem; justify-content: center; font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-muted);">
+            <span style="color: var(--neon-teal);">&bull; Page Faults Trend</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auto-Generated Conclusion -->
+      <div class="conclusion-box">
+        <h3 class="conclusion-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+          Automated Algorithmic Synthesis &amp; Trade-off Analysis
+        </h3>
+        <div class="conclusion-text" id="autoConclusionText">
+          Analyzing simulation parameters across 45 configurations...
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7: LINUX MONITOR PANEL -->
+    <section id="telemetry">
+      <div class="section-header">
+        <span class="section-tag">Kernel Telemetry</span>
+        <h2 class="section-title">Linux Monitoring Interface</h2>
+        <p class="section-subtitle">
+          Terminal-style runtime telemetry reflecting simulated kernel metrics, updating with each tick.
+        </p>
+      </div>
+
+      <div class="terminal-window">
+        <div class="terminal-titlebar">
+          <div class="terminal-dots">
+            <span class="dot-red"></span>
+            <span class="dot-yellow"></span>
+            <span class="dot-green"></span>
+          </div>
+          <span>edge-ai-soc: ~ /proc telemetry monitor</span>
+          <span class="terminal-badge">SIMULATED KERNEL TELEMETRY</span>
+        </div>
+
+        <div class="terminal-body">
+          <div style="background: rgba(255, 183, 3, 0.08); border-left: 3px solid var(--neon-amber); padding: 0.5rem 0.75rem; margin-bottom: 1rem; font-size: 0.75rem; color: var(--neon-amber);">
+            Notice: This terminal view simulates real-time kernel stats. In the companion Python/C project, this data is extracted directly from <code>/proc/stat</code>, <code>/proc/meminfo</code>, or <code>psutil</code>.
+          </div>
+
+          <!-- top output -->
+          <div class="term-section-header"># top -b -n 1</div>
+          <div style="margin-bottom: 0.75rem; color: #e2e8f0;">
+            <div id="termTopTime">top - 12:44:02 up 14 days, 3 users, load average: 0.84, 0.92, 0.78</div>
+            <div id="termTasksRunning">Tasks: 4 total, 1 running, 3 sleeping, 0 stopped, 0 zombie</div>
+            <div id="termTopCpu">%Cpu(s): 85.2 us, 1.2 sy, 0.0 ni, 13.6 id, 0.0 wa</div>
+            <div id="termTopMem">MiB Mem :  640.0 total, 192.0 free, 448.0 used, 128.0 buff/cache</div>
+          </div>
+
+          <table class="term-table">
+            <thead>
+              <tr>
+                <th>PID</th>
+                <th>USER</th>
+                <th>PR</th>
+                <th>NI</th>
+                <th>VIRT</th>
+                <th>RES</th>
+                <th>SHR</th>
+                <th>S</th>
+                <th>%CPU</th>
+                <th>%MEM</th>
+                <th>TIME+</th>
+                <th>COMMAND</th>
+              </tr>
+            </thead>
+            <tbody id="termProcessBody"></tbody>
+          </table>
+
+          <!-- vmstat output -->
+          <div class="term-section-header"># vmstat 1 1</div>
+          <table class="term-table" style="margin-bottom: 1rem;">
+            <thead>
+              <tr>
+                <th colspan="2" style="text-align: center; border-right: 1px solid rgba(255,255,255,0.1);">procs</th>
+                <th colspan="4" style="text-align: center; border-right: 1px solid rgba(255,255,255,0.1);">memory</th>
+                <th colspan="2" style="text-align: center; border-right: 1px solid rgba(255,255,255,0.1);">swap</th>
+                <th colspan="2" style="text-align: center; border-right: 1px solid rgba(255,255,255,0.1);">io</th>
+                <th colspan="2" style="text-align: center; border-right: 1px solid rgba(255,255,255,0.1);">system</th>
+                <th colspan="5" style="text-align: center;">cpu</th>
+              </tr>
+              <tr>
+                <th>r</th><th>b</th><th>swpd</th><th>free</th><th>buff</th><th>cache</th>
+                <th>si</th><th>so</th><th>bi</th><th>bo</th><th>in</th><th>cs</th>
+                <th>us</th><th>sy</th><th>id</th><th>wa</th><th>st</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="termVmstatRow"></tr>
+            </tbody>
+          </table>
+
+          <!-- free -m output -->
+          <div class="term-section-header"># free -m</div>
+          <table class="term-table">
+            <thead>
+              <tr>
+                <th></th><th>total</th><th>used</th><th>free</th><th>shared</th><th>buff/cache</th><th>available</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="termFreeRow"></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 8: HOW IT'S BUILT -->
+    <section id="engineering">
+      <div class="section-header">
+        <span class="section-tag">Engineering Methodology</span>
+        <h2 class="section-title">How It's Built: Pipeline &amp; Code Anatomy</h2>
+        <p class="section-subtitle">
+          Development lifecycle from mathematical modeling to C/Python kernels and Linux metric validation.
+        </p>
+      </div>
+
+      <!-- Stepper Timeline -->
+      <div class="stepper-timeline">
+        <div class="step-item">
+          <div class="step-marker">01</div>
+          <div class="step-content">
+            <h4 class="step-title">Model Jobs &amp; Reference Strings</h4>
+            <p class="step-desc">
+              Define discrete inference workload descriptors including arrival, burst, deadline, priority, virtual page demand, and reference strings generated with 80/20 temporal locality.
+            </p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-marker">02</div>
+          <div class="step-content">
+            <h4 class="step-title">Implement CPU Schedulers</h4>
+            <p class="step-desc">
+              Construct FCFS, SJF, Round Robin with quantum slices, Priority with aging, and preemptive Earliest Deadline First (EDF) with tie-breaking rules.
+            </p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-marker">03</div>
+          <div class="step-content">
+            <h4 class="step-title">Add Frame Allocation Strategies</h4>
+            <p class="step-desc">
+              Implement Equal, Proportional, and Priority-based partitioning to distribute physical SoC RAM frames across active inference pipelines.
+            </p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-marker">04</div>
+          <div class="step-content">
+            <h4 class="step-title">Implement Page Replacement &amp; Fault Stall</h4>
+            <p class="step-desc">
+              Build FIFO, LRU, and Optimal (Belady MIN) replacement routines. Page faults stall the CPU for configurable penalty ticks, counting toward CPU busy time.
+            </p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-marker">05</div>
+          <div class="step-content">
+            <h4 class="step-title">Collect Telemetry &amp; Metrics</h4>
+            <p class="step-desc">
+              Aggregate response times, waiting latency, turnaround intervals, deadline miss rates, fault rates, memory pressure ratios, and CPU utilization.
+            </p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-marker">06</div>
+          <div class="step-content">
+            <h4 class="step-title">Integrate Linux /proc Telemetry</h4>
+            <p class="step-desc">
+              Expose terminal-style live instrumentation mirroring <code>top</code>, <code>vmstat</code>, and <code>free</code>, bridging simulated states to real Linux systems.
+            </p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-marker">07</div>
+          <div class="step-content">
+            <h4 class="step-title">Compare 45 Configurations &amp; Conclude</h4>
+            <p class="step-desc">
+              Execute full factorial sweeps, identify optimal strategies under memory and deadline pressure, and generate empirical OS conclusions.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabbed Code Viewer -->
+      <div class="code-viewer-card">
+        <div class="code-header-bar">
+          <div class="code-tabs">
+            <button class="code-tab-btn active" data-lang="python">Python Simulator (runnable)</button>
+            <button class="code-tab-btn" data-lang="c">C Skeleton (RTOS Core)</button>
+          </div>
+          <button class="copy-btn" id="btnCopyCode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy Code
+          </button>
+        </div>
+        <pre class="code-pre"><code id="codeDisplayPre"></code></pre>
+      </div>
+    </section>
+
+    <!-- SECTION 9: LEARNING OUTCOMES & MAPPING -->
+    <section id="outcomes">
+      <div class="section-header">
+        <span class="section-tag">Academic Alignment</span>
+        <h2 class="section-title">Course Outcomes &amp; Curriculum Mapping</h2>
+        <p class="section-subtitle">
+          Direct linkage between OS mini project deliverables and undergraduate operating systems competencies.
+        </p>
+      </div>
+
+      <div class="lo-syllabus-note">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        <span>Note: Refer to your course syllabus for the exact wording. Suggested mapping, verify with your syllabus.</span>
+      </div>
+
+      <div class="outcomes-grid">
+        <div class="glass-card outcome-card">
+          <div class="outcome-badge-header">
+            <span class="outcome-badge">CO2</span>
+            <span class="outcome-category">Course Outcome</span>
+          </div>
+          <div class="outcome-link-target">CPU Scheduling &amp; Preemption</div>
+          <p class="outcome-desc">
+            Analyzed through FCFS, SJF, Round Robin, Priority, and preemptive EDF scheduler implementations with dispatch queue modeling.
+          </p>
+        </div>
+
+        <div class="glass-card outcome-card">
+          <div class="outcome-badge-header">
+            <span class="outcome-badge">CO4</span>
+            <span class="outcome-category">Course Outcome</span>
+          </div>
+          <div class="outcome-link-target">Frame Allocation &amp; Virtual Memory</div>
+          <p class="outcome-desc">
+            Demonstrated via Equal, Proportional, and Priority frame partitioning and demand-paging address translation mechanics.
+          </p>
+        </div>
+
+        <div class="glass-card outcome-card">
+          <div class="outcome-badge-header">
+            <span class="outcome-badge">CO5</span>
+            <span class="outcome-category">Course Outcome</span>
+          </div>
+          <div class="outcome-link-target">Page Replacement &amp; Fault Stall</div>
+          <p class="outcome-desc">
+            Eviction modeling comparing FIFO, LRU, and Optimal (Belady MIN), including fault penalty stalls and Belady's anomaly verification.
+          </p>
+        </div>
+
+        <div class="glass-card outcome-card">
+          <div class="outcome-badge-header">
+            <span class="outcome-badge">CO6</span>
+            <span class="outcome-category">Course Outcome</span>
+          </div>
+          <div class="outcome-link-target">Measurement, Comparison &amp; Linux Monitoring</div>
+          <p class="outcome-desc">
+            Evaluated via the 45-combination ledger, Duel Mode scoreboard, and Linux <code>/proc/stat</code> and <code>/proc/meminfo</code> telemetry.
+          </p>
+        </div>
+
+        <div class="glass-card outcome-card">
+          <div class="outcome-badge-header">
+            <span class="outcome-badge" style="color: var(--neon-cyan); border-color: var(--neon-cyan);">CT-LO2</span>
+            <span class="outcome-category">Skill: Computational Thinking</span>
+          </div>
+          <div class="outcome-link-target">Algorithmic Modeling &amp; Invariants</div>
+          <p class="outcome-desc">
+            Decomposition of multi-parameter OS schedulers into discrete-event simulation queues and formal invariant testing.
+          </p>
+        </div>
+
+        <div class="glass-card outcome-card">
+          <div class="outcome-badge-header">
+            <span class="outcome-badge" style="color: var(--neon-cyan); border-color: var(--neon-cyan);">CT-LO4</span>
+            <span class="outcome-category">Skill: Computational Thinking</span>
+          </div>
+          <div class="outcome-link-target">Trade-off &amp; Quantitative Analysis</div>
+          <p class="outcome-desc">
+            Multi-objective weighted scoring of response latency versus deadline miss rates and memory pressure under memory thrashing.
+          </p>
+        </div>
+
+        <div class="glass-card outcome-card">
+          <div class="outcome-badge-header">
+            <span class="outcome-badge" style="color: var(--neon-amber); border-color: var(--neon-amber);">IP-LO1</span>
+            <span class="outcome-category">Skill: Implementation</span>
+          </div>
+          <div class="outcome-link-target">Python/C Implementation</div>
+          <p class="outcome-desc">
+            Constructing modular, zero-dependency simulation engines in Python and C with reproducible seeded pseudo-random generation.
+          </p>
+        </div>
+
+        <div class="glass-card outcome-card">
+          <div class="outcome-badge-header">
+            <span class="outcome-badge" style="color: var(--neon-amber); border-color: var(--neon-amber);">IP-LO4</span>
+            <span class="outcome-category">Skill: Programming</span>
+          </div>
+          <div class="outcome-link-target">Linux Tooling &amp; Testing Harness</div>
+          <p class="outcome-desc">
+            Building unit-verification test harnesses and terminal telemetry parsers extracting real operating system instrumentation.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 10: DELIVERABLES & INTERACTIVE CHECKLIST -->
+    <section id="deliverables">
+      <div class="section-header">
+        <span class="section-tag">Submission Readiness</span>
+        <h2 class="section-title">Deliverables &amp; Project Checklist</h2>
+        <p class="section-subtitle">
+          Interactive evaluation checklist saved automatically in browser storage.
+        </p>
+      </div>
+
+      <div class="checklist-container">
+        <div class="progress-header-box">
+          <span class="stat-label">COMPLETION PROGRESS</span>
+          <span id="checklistCount" style="font-family: var(--font-mono); font-size: 0.88rem; color: var(--neon-teal); font-weight: 700;">
+            0 of 6 Completed (0%)
+          </span>
+        </div>
+
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="checklistProgressBar"></div>
+        </div>
+
+        <div class="checklist-items">
+          <div class="checklist-item" data-index="0">
+            <div class="custom-checkbox">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div>
+              <div class="check-label">Python / C Simulator Engine</div>
+              <div class="check-sub">Discrete tick execution with FCFS, SJF, RR, Priority, EDF, and demand paging.</div>
+            </div>
+          </div>
+
+          <div class="checklist-item" data-index="1">
+            <div class="custom-checkbox">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div>
+              <div class="check-label">Linux Metrics Script</div>
+              <div class="check-sub">Live extraction from /proc/stat, /proc/meminfo, and psutil telemetry.</div>
+            </div>
+          </div>
+
+          <div class="checklist-item" data-index="2">
+            <div class="custom-checkbox">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div>
+              <div class="check-label">Comparison Graphs &amp; Visual Companion</div>
+              <div class="check-sub">Unit-isolated SVG response, deadline miss, page fault, and pressure curves.</div>
+            </div>
+          </div>
+
+          <div class="checklist-item" data-index="3">
+            <div class="custom-checkbox">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div>
+              <div class="check-label">Project Documentation Report</div>
+              <div class="check-sub">Algorithmic complexity, trade-off synthesis, and mathematical proof mapping.</div>
+            </div>
+          </div>
+
+          <div class="checklist-item" data-index="4">
+            <div class="custom-checkbox">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div>
+              <div class="check-label">Live Demo Screenshots &amp; Traces</div>
+              <div class="check-sub">Captured Gantt runway states, memory frame hits, faults, and Linux top views.</div>
+            </div>
+          </div>
+
+          <div class="checklist-item" data-index="5">
+            <div class="custom-checkbox">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div>
+              <div class="check-label">Empirical &amp; Mathematical Conclusion</div>
+              <div class="check-sub">Rigorous derivation of optimal strategy combinations across edge constraints.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="main-wrapper">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-brand">Edge-AI Workload CPU and Memory Scheduler</div>
+          <div style="font-size: 0.82rem; color: var(--text-dim); margin-top: 0.25rem;">
+            University Operating Systems Mini Project Visual Companion &bull; Zero External Requests &bull; 100% Offline
+          </div>
+        </div>
+
+        <div class="footer-credit">
+          Sai Sparsh B | 25BTRPW078
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <a href="tests.html" class="btn-ghost btn-sm" target="_blank" style="font-family: var(--font-mono); font-size: 0.75rem;">
+            Run tests.html
+          </a>
+          <button class="btn-back-to-top" id="btnBackToTop" title="Back to Top" aria-label="Back to Top">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Built-In Verification Drawer Modal -->
+  <div class="verification-drawer-modal" id="verificationModal">
+    <div class="drawer-dialog">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem;">
+        <div>
+          <h3 style="font-size: 1.35rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+            <span>Engine Verification Suite</span>
+            <span class="meta-pill" style="color: var(--neon-green); border-color: var(--neon-green);">ALL PASS</span>
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Empirical validation of Belady's anomaly, Silberschatz reference strings, EDF feasibility, and determinism.
+          </p>
+        </div>
+        <button id="btnCloseVerification" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.5rem;" aria-label="Close Modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div id="modalTestList"></div>
+
+      <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+        <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim);">Sai Sparsh B | 25BTRPW078</span>
+        <a href="tests.html" target="_blank" class="btn-secondary btn-sm">
+          Open Standalone Suite (tests.html) &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Modules (Zero CDN, Zero external requests, Works offline & directly on file://) -->
+  <script src="js/engine.js"></script>
+  <script src="js/background.js"></script>
+  <script src="js/simulators.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
